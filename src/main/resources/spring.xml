@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+
+
+    <!-- 基于package包的扫描注入 -->
+    <context:component-scan base-package="com.nickchen.util, com.nickchen.core, com.nickchen.factory" />
+    <!-- 配置获取上下文的工具类 -->
+    <bean id="contextUtils" class="com.nickchen.util.SpringContextUtils"/>
+    <!-- 配置目标Bean -->
+    <bean id="serviceTarget" class="com.nickchen.service.impl.UserServiceImpl"/>
+
+    <!-- 配置代理工厂Bean，负责生成AOP代理 -->
+    <bean id="service" class="org.springframework.aop.framework.ProxyFactoryBean" primary="true">
+        <!-- 指定AOP代理所实现的接口 -->
+        <property name="proxyInterfaces" value="com.nickchen.service.UserService"/>
+        <!-- 指定AOP代理所代理的目标Bean -->
+        <property name="target" ref="serviceTarget"/>
+        <!--&lt;!&ndash; AOP代理所需要的拦截器列表 &ndash;&gt;-->
+        <!--<property name="interceptorNames">-->
+            <!--<list>-->
+                <!--<value>authorityInterceptor</value>-->
+            <!--</list>-->
+        <!--</property>-->
+    </bean>
+
+    <!-- 测试类 -->
+
+</beans>
