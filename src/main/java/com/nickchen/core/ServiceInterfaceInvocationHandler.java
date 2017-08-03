@@ -1,25 +1,26 @@
 package com.nickchen.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.nickchen.annotation.ServiceInterface;
 import com.nickchen.annotation.ServiceMethod;
-import com.xiaoleilu.hutool.http.HttpRequest;
-import com.xiaoleilu.hutool.http.HttpResponse;
-import com.xiaoleilu.hutool.http.HttpUtil;
+import com.xiaoleilu.hutool.http.*;
+import com.xiaoleilu.hutool.util.TypeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.util.Assert;
-import java.lang.reflect.InvocationHandler;
+
+import java.lang.reflect.*;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.text.MessageFormat;
+import java.util.*;
 
 /**
  * @author nickChen
  * @create 2017-08-02 13:19.
  */
-public class ServiceInterfaceInvocationHanlder implements InvocationHandler {
+public class ServiceInterfaceInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -32,18 +33,45 @@ public class ServiceInterfaceInvocationHanlder implements InvocationHandler {
                                                     serviceInterface.baseUrl(),
                                                     serviceMethod.value(),
                                                     serviceMethod.method());
-        String url = serviceArgs.getProtocol() + "://www.jianshu.com" + serviceArgs.getBaseUrl() + serviceArgs.getUrl();
-        HttpRequest request = HttpUtil.createRequest(com.xiaoleilu.hutool.http.Method.GET, url);
-        HttpResponse response = request.execute();
-        String json = "{name:'nickchen'}";
-        return JSON.parseObject(json, method.getReturnType());
+
+        String body = null;
+        if (null == args) {
+            body = doHttpRequest(serviceArgs);
+        }else if (args[0] instanceof Map){
+            body = doHttpRequest(serviceArgs, (Map)args[0]);
+        }else {
+            throw new IllegalArgumentException(MessageFormat.format("Method [ {0}.{1} ] should has a Map<String, Object> argument on the first index.", method.getDeclaringClass().getName(), method.getName()));
+        }
+        return JSON.parseObject(body, method.getReturnType());
     }
 
+    private String doHttpRequest(ServiceArgs args) {
+        return doHttpRequest(args, null);
+    }
+
+    private String doHttpRequest(ServiceArgs args, Map<String, Object> map) {
+        String url = args.getProtocol() + "://" +args.getBaseUrl() + args.getUrl();
+        if ("GET".equalsIgnoreCase(args.getMethod())) {
+            if (null == map){
+                return HttpUtil.get(url);
+            }
+            return HttpUtil.get(url, map);
+        }else if ("POST".equalsIgnoreCase(args.getMethod())) {
+            if (null == map){
+                return HttpUtil.post(url, "");
+            }
+            return HttpUtil.post(url, map);
+        }
+        return null;
+    }
+
+
+    @SuppressWarnings("unchecked")
     public static <T> T newInstance(Class<T> innerInterface) {
         ClassLoader classLoader = innerInterface.getClassLoader();
         Class[] interfaces = new Class[] { innerInterface };
-        ServiceInterfaceInvocationHanlder hanlder = new ServiceInterfaceInvocationHanlder();
-        return (T) Proxy.newProxyInstance(classLoader, interfaces, hanlder);
+        ServiceInterfaceInvocationHandler handler = new ServiceInterfaceInvocationHandler();
+        return (T) Proxy.newProxyInstance(classLoader, interfaces, handler);
     }
 
     public Object getProxy(Class[] interfaces) {

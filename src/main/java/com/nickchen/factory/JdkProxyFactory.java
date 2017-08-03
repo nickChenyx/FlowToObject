@@ -1,6 +1,6 @@
 package com.nickchen.factory;
 
-import com.nickchen.core.ServiceInterfaceInvocationHanlder;
+import com.nickchen.core.ServiceInterfaceInvocationHandler;
 import org.springframework.util.Assert;
 
 import java.text.MessageFormat;
@@ -13,7 +13,7 @@ public class JdkProxyFactory implements ProxyFactory {
     @Override
     public Object create(Class clazz) {
         Assert.isTrue(clazz.isInterface(), MessageFormat.format("[ {0} ] is not an Interface, please check out or use CGlibProxy", clazz.getName()));
-        return ServiceInterfaceInvocationHanlder.newInstance(clazz);
+        return ServiceInterfaceInvocationHandler.newInstance(clazz);
     }
 
 }
